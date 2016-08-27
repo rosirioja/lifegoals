@@ -6,12 +6,24 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 
+use App\Contracts\GoalInterface;
+
+use Log, DB, Exception;
+
 class BaseController extends Controller
 {
     public $goal_status = [
         'ongoing' => 'ONGOING',
         'achieved' => 'ACHIEVED'
     ];
+
+    public function __construct(
+        GoalInterface $goalInterface)
+    {
+        $this->goal = $goalInterface;
+
+        DB::enableQueryLog();
+    }
 
     /**
      * Check if the goal status is achieved
@@ -22,19 +34,43 @@ class BaseController extends Controller
      */
     public function checkGoalStatus($goal = [], $new_amount = '')
     {
+        if (empty($goal)) {
+            return false;
+        }
+
+        $accumulated_amount = empty($new_amount) ? $goal->accumulated_amount : $new_amount;
+
+        if ($accumulated_amount >= $goal->target_amount == 1) {
+            return true;
+        }
+
+        if ( ($goal->target_date != null) && (date('Y-m-d') >= date('Y-m-d', strtotime($goal->target_date))) ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Update Goal Status to Achieved
+     *
+     * @param int goal id
+     * @return boolean
+     */
+    public function updateGoalAchievedStatus($goal_id = '')
+    {
         try {
-            if (empty($goal)) {
+            if (empty($goal_id)) {
                 throw new Exception();
             }
 
-            $accumulated_amount = empty($new_amount) ? $goal->accumulated_amount : $new_amount;
+            $data = [
+                'status' => $this->goal_status['achieved'],
+                'achieved_date' => date('Y-m-d')
+            ];
 
-            if ($accumulated_amount >= $goal->target_amount) {
-                return true;
-            }
-
-            if (date('Y-m-d') >= date('Y-m-d', strtotime($goal->target_date))) {
-                return true;
+            if (! $this->goal->update($goal_id, $data)) {
+                throw new Exception();
             }
 
         } catch (Exception $e) {
