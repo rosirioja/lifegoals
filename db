@@ -1,0 +1,34 @@
+#!/bin/bash
+
+drop() {
+    docker stop lifegoalsdb lifegoalsdb-data
+    docker rm lifegoalsdb lifegoalsdb-data
+}
+
+create() {
+    # create data container for mysql
+    docker run --name lifegoalsdb-data -d -v /var/lib/mysql/data debian:wheezy /bin/sh -c 'while true; do sleep 9999; done'
+
+    # create mysql container
+    docker run \
+        --name lifegoalsdb \
+        --volumes-from lifegoalsdb-data \
+        --restart always \
+        -e MYSQL_USER=lifegoals \
+        -e MYSQL_PASSWORD=5hVfZ2bV5tBZdH88 \
+        -e MYSQL_ROOT_PASSWORD=Z9T8kbZzP7Yahsu2 \
+        -e MYSQL_DATABASE=lifegoals \
+        -d \
+        mysql:5.6
+}
+
+case "$1" in
+    drop)
+        drop $2
+        ;;
+    create)
+        create $2
+        ;;
+    *)
+        echo "db drop|create"
+esac
