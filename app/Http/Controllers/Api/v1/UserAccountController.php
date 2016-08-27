@@ -10,6 +10,7 @@ use App\Http\Controllers\BaseController;
 
 use App\Contracts\UserInterface;
 use App\Contracts\UserAccountInterface;
+use App\Contracts\TransactionInterface;
 
 use DB, Log, Exception, Validator;
 
@@ -17,10 +18,12 @@ class UserAccountController extends BaseController
 {
     public function __construct(
         UserInterface $userInterface,
-        UserAccountInterface $userAccountInterface)
+        UserAccountInterface $userAccountInterface,
+        TransactionInterface $transactionInterface)
     {
         $this->user = $userInterface;
         $this->userAccount = $userAccountInterface;
+        $this->transaction = $transactionInterface;
 
         $this->account_type = ['UNIONBANK', 'COINSPH'];
 
@@ -55,10 +58,12 @@ class UserAccountController extends BaseController
 
             // VALIDATION -STARTS
             if (! $this->user->exists(['id' => $user_id, 'active' => 1])) {
+                $isBadRequest = true;
                 throw new Exception("Error Processing Request: Invalid User");
             }
 
             if (! in_array($type, $this->account_type)) {
+                $isBadRequest = true;
                 throw new Exception("Error Processing Request: Invalid Account Type");
             }
             // VALIDATION - ENDS
@@ -94,5 +99,65 @@ class UserAccountController extends BaseController
             'success' => true,
             'data' => $data
         ], 200);
+    }
+
+    /**
+     * Get User Accounts per User
+     * Get Transaction History per user
+     *
+     * @param int user id
+     * @return json
+     */
+    public function getPortfolio($user_id = '')
+    {
+        try {
+            $isBadRequest = false; // switching of http response code
+
+            // VALIDATION - STARTS
+            if (empty($user_id)) {
+                $isBadRequest = true;
+                throw new Exception("Error Processing Request: No Parameters Specified.");
+            }
+
+            if (! $this->user->exists(['id' => $user_id, 'active' => 1])) {
+                $isBadRequest = true;
+                throw new Exception("Error Processing Request: Invalid User");
+            }
+            // VALIDATION - ENDS
+
+            $params = [
+                'where' => [
+                    'and' => [
+                        ['field' => 'user_id', 'value' => $user_id]
+                    ]
+                ]
+            ];
+
+            if (! $accounts = $this->userAccount->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Account Data");
+            }
+
+            if (! $transactions = $this->transaction->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Transaction Data");
+            }
+
+            $data = [
+                'accounts' => $accounts,
+                'transactions' => $transactions
+            ];
+
+        } catch (Exception $e) {
+            $code = $isBadRequest ? 400 : 500;
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $code);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ], 200);
+
     }
 }

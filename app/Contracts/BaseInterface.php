@@ -8,6 +8,7 @@ interface BaseInterface
 
     public function get($id = 0, $columns = array('*'));
     public function getBy(array $where, $select = ['*'], $join = []);
+    public function getList(array $args);
     
     public function store(array $data);
 

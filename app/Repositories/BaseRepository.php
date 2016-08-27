@@ -107,6 +107,115 @@ class BaseRepository
 
         return $instance->get()->first();
     }
+
+    /**
+     * Get table list by building query.
+     *
+     * @param  array $args SQL clauses
+     * @return object Result list or resource
+     */
+    public function getList(array $args)
+    {
+        $params = [
+            'select' => null,
+            'selectRaw' => null,
+            'where' => null,
+            'join' => [],
+            'group_by' => null,
+            'groupby_raw' => null,
+            //'having' => null,
+            'order_by' => null,
+            'offset' => null,
+            'limit' => null,
+        ];
+
+        $params = $this->setParams($params, $args);
+        $instance = $this->getNewInstance();
+
+        if ( ! empty($params['select'])) $instance = $instance->select($params['select']);
+
+        if ( ! empty($params['selectRaw'])) $instance = $instance->select(DB::raw($params['selectRaw']));
+
+        if ( ! empty($params['where']))
+        {
+            foreach ($params['where'] as $i => $row)
+            {
+                switch ($i)
+                {
+                    case 'or':
+                        foreach ($row as $key) {
+                            if (! isset($key['operator'])) $key['operator'] = '=';
+                            $instance = $instance->orWhere($key['field'], $key['operator'], $key['value']);
+                        }
+                        break;
+
+                    case 'between':
+                        foreach ($row as $field => $values)
+                        {
+                            $instance = $instance->whereBetween($field, $values);
+                        }
+                        break;
+
+                    case 'and':
+                        $instance = $instance->where(function ($query) use ($row){
+
+                            foreach ($row as $key) {
+
+                                if (isset($key['raw']))
+                                {
+                                    $query->whereRaw($key['raw']);
+                                    continue;
+                                }
+
+                                if (! isset($key['operator'])) $key['operator'] = '=';
+                                $query->where($key['field'], $key['operator'], $key['value']);
+                            }
+                        });
+                        break;
+                    default:
+                        $instance = $instance->where($row);
+                        break;
+                }
+            }
+        }
+
+        if ( ! empty($params['join']))
+        {
+            foreach ($params['join'] as $row)
+            {
+                if (empty($row['operator'])) $row['operator'] = '=';
+                if (empty($row['join'])) $row['join'] = '';
+
+                switch ($row['join']) {
+                    case 'left':
+                        $instance = $instance->leftJoin($row['table'], $row['one'], $row['operator'], $row['two']);
+                        break;
+
+                    default:
+                        $instance = $instance->join($row['table'], $row['one'], $row['operator'], $row['two']);
+                        break;
+                }
+            }
+        }
+
+        if ( ! empty($params['order_by']))
+        {
+            foreach ($params['order_by'] as $key => $value)
+            {
+                $instance = $instance->orderBy($key, $value);
+            }
+        }
+
+        if ( ! empty($params['group_by'])) $instance = $instance->groupBy($params['group_by']);
+
+        if ( ! empty($params['groupby_raw'])) $instance = $instance->groupBy(DB::raw($params['groupby_raw']));
+
+        if ( ! empty($params['offset'])) $instance = $instance->skip($params['offset']);
+
+        if ( ! empty($params['limit'])) $instance = $instance->take($params['limit']);
+
+        return $instance->get();
+    }
     
     /**
     * Insert data in the database
