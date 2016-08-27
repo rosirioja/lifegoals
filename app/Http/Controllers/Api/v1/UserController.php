@@ -96,8 +96,7 @@ class UserController extends BaseController
                 'username' => $request->input('link'), // substr($request->input('link'), $start)
                 'name' => $request->input('name'),
                 'firstname' => $request->input('firstname'),
-                'lastname' => $request->input('lastname'),
-                'email' => $request->input('email')
+                'lastname' => $request->input('lastname')
             ];
 
             if ($this->user->exists(['facebook_id' => $facebook_id, 'active' => 1]) == 1) {
@@ -111,7 +110,8 @@ class UserController extends BaseController
             } else {
 
                 $data['facebook_id'] =  $facebook_id;
-
+                $data['email'] = $request->input('email');
+                
                 if (! $user = $this->user->store($data)) {
                     throw new Exception("Error Processing Request: Cannot Add User");
                 }
