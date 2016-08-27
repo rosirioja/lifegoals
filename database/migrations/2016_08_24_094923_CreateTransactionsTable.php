@@ -19,7 +19,7 @@ class CreateTransactionsTable extends Migration
             $table->integer('user_id')->unsigned()->default(0);
             $table->integer('user_account_id')->unsigned()->default(0);
             $table->double('amount', 15, 4)->unsigned()->default(0);
-            $table->string('type')->default(''); //deposit / withdraw
+            $table->string('type')->default(''); //CASHIN / CASHOUT
             $table->string('invoice_id')->default('');
             $table->string('reference_no')->default('');
             $table->datetime('transaction_date')->nullable();
