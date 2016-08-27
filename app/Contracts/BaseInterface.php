@@ -14,4 +14,5 @@ interface BaseInterface
     public function store(array $data);
 
     public function update($id = 0, array $data);
+	public function updateBy(array $fieldValue, array $data);
 }

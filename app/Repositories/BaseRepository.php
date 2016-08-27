@@ -288,7 +288,7 @@ class BaseRepository
 
         return $instance->count();
     }
-    
+
     /**
     * Insert data in the database
     *
@@ -313,6 +313,42 @@ class BaseRepository
     public function update($id = 0, array $data)
     {
         $instance = $this->getNewInstance()->find($id);
+        return $instance->update($data);
+    }
+
+    /**
+    * Update record by using where clause
+    *
+    * @access public
+    * @params array | fieldValue
+    * @params array | data
+    * @return void
+    */
+    public function updateBy(array $fieldValue, array $data)
+    {
+        $instance = $this->getNewInstance();
+
+        foreach($fieldValue as $field => $value) {
+
+            switch ($field) {
+                case 'and':
+                    $instance = $instance->where(function ($query) use ($value){
+                        foreach ($value as $key) {
+                            if (isset($key['raw']))
+                            {
+                                $query->whereRaw($key['raw']);
+                                continue;
+                            }
+                        }
+                    });
+                    break;
+
+                default:
+                    $instance = $instance->where($field, $value);
+                    break;
+            }
+        }
+
         return $instance->update($data);
     }
 }

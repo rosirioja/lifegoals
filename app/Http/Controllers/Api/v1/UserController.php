@@ -103,7 +103,7 @@ class UserController extends BaseController
 
                 $user = $this->user->getBy(['facebook_id' => $facebook_id, 'active' => 1]);
 
-                if (! $this->user->update($user->id, $data)) {
+                if ($this->user->updateBy(['facebook_id' => $facebook_id], $data) == false) {
                     throw new Exception("Error Processing Request: Cannot Update User");
                 }
 
@@ -111,7 +111,7 @@ class UserController extends BaseController
 
                 $data['facebook_id'] =  $facebook_id;
                 $data['email'] = $request->input('email');
-                
+
                 if (! $user = $this->user->store($data)) {
                     throw new Exception("Error Processing Request: Cannot Add User");
                 }
