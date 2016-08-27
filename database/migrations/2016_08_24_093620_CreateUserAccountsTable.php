@@ -16,7 +16,7 @@ class CreateUserAccountsTable extends Migration
         Schema::create('user_accounts', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('user_id')->unsigned()->default(0);
-            $table->string('type')->default(''); //either UNIONBANK / COINSPH
+            $table->string('type')->default(''); // UNIONBANK / COINSPH
             $table->string('access_token')->default('');
             $table->string('account_name')->default('');
             $table->string('account_no')->default('');

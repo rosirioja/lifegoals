@@ -22,7 +22,7 @@ class CreateTransactionsTable extends Migration
             $table->string('type')->default(''); //deposit / withdraw
             $table->string('invoice_id')->default('');
             $table->string('reference_no')->default('');
-            $table->datetime('transaction_date');
+            $table->datetime('transaction_date')->nullable();
             $table->string('status')->default(''); // PENDING / SUCCESS / FAILED / CANCELLED
             $table->timestamps();
             $table->foreign('goal_id')->references('id')->on('goals');

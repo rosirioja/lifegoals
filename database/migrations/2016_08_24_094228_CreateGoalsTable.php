@@ -17,12 +17,12 @@ class CreateGoalsTable extends Migration
             $table->increments('id');
             $table->integer('user_id')->unsigned()->default(0);
             $table->string('name')->default('');
-            $table->string('type')->default(''); //personal / group
-            $table->string('visibility')->default('public'); // public/private
+            $table->string('type')->default(''); //PERSONAL / GROUP
+            $table->string('visibility')->default('public'); // PUBLIC / PRIVATE
             $table->double('target_amount', 15, 4)->unsigned()->default(0);
-            $table->datetime('target_date');
+            $table->datetime('target_date')->nullable();
             $table->double('accumulated_amount', 15, 4)->unsigned()->default(0);
-            $table->datetime('achieved_date');
+            $table->datetime('achieved_date')->nullable();
             $table->string('status')->default('ONGOING'); //ONGOING / ACHIEVED
             $table->string('image_path')->default('');
             $table->timestamps();
