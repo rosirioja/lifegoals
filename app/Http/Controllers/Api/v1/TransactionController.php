@@ -14,6 +14,8 @@ use App\Contracts\UserAccountInterface;
 use App\Contracts\ContributorInterface;
 use App\Contracts\TransactionInterface;
 
+use App\Classes\FundTransfer;
+
 use DB, Log, Exception, Validator;
 
 class TransactionController extends BaseController
@@ -109,13 +111,15 @@ class TransactionController extends BaseController
             // VALIDATION - ENDS
 
             // Save the transaction
+            $invoice_id = uniqid('TRN');
+
             $data = [
                 'goal_id' => $goal_id,
                 'user_id' => $user_id,
                 'user_account_id' => $user_account_id,
                 'amount' => $amount,
-                'type' => $request->input('type'),
-                'invoice_id' => uniqid('TRN'),
+                'type' => $action_type,
+                'invoice_id' => $invoice_id,
                 'transaction_date' => date('Y-m-d'),
                 'status' => $this->type['pending']
             ];
@@ -125,10 +129,15 @@ class TransactionController extends BaseController
             }
 
             $userAccount = $this->userAccount->get($user_account_id);
-
             // Call Transaction Service
-            // $response = new TransactionService($userAccount->access_token, $amount);
-            // $transaction = $response->fundTransfer($recipient);
+            $fundTransfer = new FundTransfer([
+                'account_type' => $userAccount->type,
+                'access_token' => $userAccount->access_token, // COINS CASHIN
+                'target_address' => $userAccount->target_address, // COINS CASHOUT
+                'account_no' => $userAccount->account_no, // UBANK
+                'transaction_id' => $invoice_id // UBANK
+            ]);
+            $transaction = $fundTransfer->fundTransfer($action_type, $amount);
 
             // Update the Goal for the Accumulated Amount
             $goal = $this->goal->get($goal_id);
