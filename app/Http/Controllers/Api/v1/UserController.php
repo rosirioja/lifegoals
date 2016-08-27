@@ -32,7 +32,7 @@ class UserController extends BaseController
     public function store(Request $request)
     {
         try {
-            $bad_request = false; // switching of http response code
+            $isBadRequest = false; // switching of http response code
 
             // Validate the request
             $validator = Validator::make($request->all(), [
@@ -45,11 +45,11 @@ class UserController extends BaseController
             ]);
 
             if ($validator->fails()) {
-                $bad_request = true;
+                $isBadRequest = true;
                 throw new Exception(json_to_string($validator->messages()->toArray()));
             }
 
-            /* 
+            /*
              * if facebook id exists, just update the user info
              * else insert user info
              */
@@ -66,7 +66,7 @@ class UserController extends BaseController
             if ($this->user->exists(['facebook_id' => $facebook_id, 'active' => 1]) == 1) {
 
                 $user = $this->user->getBy(['facebook_id' => $facebook_id, 'active' => 1]);
-                Log::info($user);
+                
                 if (! $this->user->update($user->id, $data)) {
                     throw new Exception("Error Processing Request: Cannot Update User");
                 }
@@ -81,7 +81,7 @@ class UserController extends BaseController
             }
 
         } catch (Exception $e) {
-            $code = $bad_request ? 400 : 500;
+            $code = $isBadRequest ? 400 : 500;
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
