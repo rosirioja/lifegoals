@@ -11,6 +11,7 @@ use App\Http\Controllers\BaseController;
 use App\Contracts\GoalInterface;
 use App\Contracts\UserInterface;
 use App\Contracts\ContributorInterface;
+use App\Contracts\TransactionInterface;
 
 use DB, Log, Exception, Validator, File;
 
@@ -19,11 +20,13 @@ class GoalController extends BaseController
     public function __construct(
         GoalInterface $goalInterface,
         UserInterface $userInterface,
-        ContributorInterface $contributorInterface)
+        ContributorInterface $contributorInterface,
+        TransactionInterface $transactionInterface)
     {
         $this->goal = $goalInterface;
         $this->user = $userInterface;
         $this->contributor = $contributorInterface;
+        $this->transaction = $transactionInterface;
 
         $this->goal_type = [
             'personal' => 'PERSONAL',
@@ -241,7 +244,56 @@ class GoalController extends BaseController
      */
     public function show($id)
     {
-        //
+        try {
+            $isBadRequest = false; // switching of http response code
+
+            // VALIDATION - STARTS
+            if (! $this->goal->exists(['id' => $id])) {
+                throw new Exception("Error Processing Request: Invalid Goal");
+            }
+            // VALIDATION - ENDS
+
+            // get the goal info
+            $goal = $this->goal->get($id);
+            $goal_id = $goal->id;
+
+            // get the contributors and its total amount per contributors
+            $params = [
+                'selectRaw' => 'users.name, users.facebook_id, sum(amount) total',
+                'where' => [
+                    'and' => [
+                        ['field' => 'goal_id', 'value' => $id]
+                    ]
+                ],
+                'join' => [
+                    [
+                        'table' => 'users',
+                        'one' => 'users.id',
+                        'two' => 'transactions.user_id'
+                    ]
+                ],
+                'groupby_raw' => 'user_id, users.name, users.facebook_id'
+            ];
+            if (! $contributors = $this->transaction->getList($params));
+
+            $data = [
+                'goal' => $goal,
+                'contributors' => $contributors,
+                'total_amount' => $goal->accumulated_amount
+            ];
+        } catch (Exception $e) {
+            $code = $isBadRequest ? 400 : 500;
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $code);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ], 200);
+
     }
 
     /**
