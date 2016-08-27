@@ -12,6 +12,8 @@ use App\Contracts\UserInterface;
 use App\Contracts\UserAccountInterface;
 use App\Contracts\TransactionInterface;
 
+use App\Classes\AccountApi;
+
 use DB, Log, Exception, Validator;
 
 class UserAccountController extends BaseController
@@ -25,7 +27,7 @@ class UserAccountController extends BaseController
         $this->userAccount = $userAccountInterface;
         $this->transaction = $transactionInterface;
 
-        $this->account_type = ['UNIONBANK', 'COINSPH'];
+        $this->account_type = ['UBANK', 'COINS'];
 
         DB::enableQueryLog();
     }
@@ -100,7 +102,13 @@ class UserAccountController extends BaseController
 
             $user_id = $request->input('user_id');
             $type = $request->input('type');
+
+            // if UBANK rename to account_no
             $access_token = $request->input('access_token');
+            $account_no = '';
+            if ($type == 'UBANK') {
+                $account_no = $access_token;
+            }
 
             // VALIDATION -STARTS
             if (! $this->user->exists(['id' => $user_id, 'active' => 1])) {
@@ -115,19 +123,35 @@ class UserAccountController extends BaseController
             // VALIDATION - ENDS
 
             // Connect with Account Service to get info
-            // $accountService = new AccountService($type, $access_token);
-            // $response = $accountService->getAccountInfo();
+            $accountApi = new AccountApi([
+                'type' => $type,
+                'access_token' => $access_token,
+                'account_no' => $account_no
+            ]);
+            $response = $accountApi->getAccountInfo();
 
+            if ($response == false) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Account Information");
+            }
 
             $params = [
                 'user_id' => $user_id,
                 'type' => $type,
-                'access_token' => $access_token,
-                'account_name' => '',
-                'account_no' => '',
-                'target_address' => '',
-                'current_balance' => 0
+                'access_token' => $access_token
             ];
+
+            if ($type == 'UBANK') {
+                $params['account_name'] = $response['account_name'];
+                $params['account_no'] = $response['account_no'];
+                $params['current_balance'] = $response['avaiable_balance'];
+            }
+
+            if ($type == 'COINS') {
+                $params['account_name'] = $response['name'];
+                $params['account_no'] = $response['id'];
+                $params['target_address'] = $response['default_address'];
+                $params['current_balance'] = $response['balance'];
+            }
 
             if (! $data = $this->userAccount->store($params)) {
                 throw new Exception("Error Processing Request: Cannot Add Account");
