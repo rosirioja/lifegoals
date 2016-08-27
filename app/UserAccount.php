@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class User_account extends Model
+class UserAccount extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -12,5 +12,5 @@ class User_account extends Model
      * @var array
      */
     protected $guarded = ['id', 'created_at', 'updated_at'];
-    
+
 }
