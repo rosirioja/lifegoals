@@ -30,11 +30,6 @@ class GoalController extends BaseController
             'group' => 'GROUP'
         ];
 
-        $this->goal_status = [
-            'ongoing' => 'ONGOING',
-            'achieved' => 'ACHIEVED'
-        ];
-
         DB::enableQueryLog();
     }
 
@@ -93,6 +88,19 @@ class GoalController extends BaseController
                 }
                 $row->contributors = $contributors;
 
+                // Check if the goal is already achieved
+                if ($row->status != $this->goal_status['achieved']) {
+                    $is_achieved = $this->checkGoalStatus($row);
+                    if ($is_achieved) {
+                        if (! $this->updateGoalAchievedStatus($goal_id)) {
+                            throw new Exception("Error Processing Request: Cannot Update Goal Status");
+                        }
+
+                        $row->status = $this->goal_status['achieved'];
+                        $row->achieved_date = date('Y-m-d');
+                    }
+                }
+
                 // Get how many days it took for the goal to achieved
                 $days_achieved = 0;
                 if ($row->status == $this->goal_status['achieved']) {
@@ -107,6 +115,7 @@ class GoalController extends BaseController
                 $row->accumulated_amount_percentage = ($row->accumulated_amount / $row->target_amount) * 100;;
 
                 $row->days_achieved = $days_achieved;
+
                 $data[] = $row;
             }
 
