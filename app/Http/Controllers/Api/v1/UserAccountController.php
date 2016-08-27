@@ -123,12 +123,11 @@ class UserAccountController extends BaseController
             // VALIDATION - ENDS
 
             // Connect with Account Service to get info
-            $accountApi = new AccountApi([
+            $response = $this->connectAccountService([
                 'type' => $type,
                 'access_token' => $access_token,
                 'account_no' => $account_no
             ]);
-            $response = $accountApi->getAccountInfo();
 
             if ($response == false) {
                 throw new Exception("Error Processing Request: Cannot Retrieve Account Information");
@@ -211,7 +210,30 @@ class UserAccountController extends BaseController
                 throw new Exception("Error Processing Request: Cannot Retrieve Transaction Data");
             }
 
+            // Connect with Account Service to get info
+            $total = 0;
+            $updated_accounts = [];
+            foreach ($accounts as $row ) {
+                $response = $this->connectAccountService([
+                    'type' => $row->type,
+                    'access_token' => $row->access_token,
+                    'account_no' => $row->account_no
+                ]);
+
+                if ($response == false) {
+                    Log::info('/portfolio/user_id: Cannot Retrieve Account Information');
+                    Log::info($row);
+                    continue;
+                }
+
+                $row->current_balance = ($row->type == 'UBANK') ? $response['avaiable_balance'] : $response['balance'];
+                $total += $row->current_balance;
+
+                $updated_accounts[] = $row;
+            }
+
             $data = [
+                'total' => $total,
                 'accounts' => $accounts,
                 'transactions' => $transactions
             ];
@@ -228,5 +250,27 @@ class UserAccountController extends BaseController
             'success' => true,
             'data' => $data
         ], 200);
+    }
+
+    /**
+     * Connect to Account API
+     *
+     * @param array params
+     * @return boolean
+     */
+    public function connectAccountService($params = [])
+    {
+        if (empty($params)) {
+            return false;
+        }
+        $accountApi = new AccountApi([
+            'type' => $params['type'],
+            'access_token' => $params['access_token'],
+            'account_no' => $params['account_no']
+        ]);
+
+        $response = $accountApi->getAccountInfo();
+
+        return $response;
     }
 }
