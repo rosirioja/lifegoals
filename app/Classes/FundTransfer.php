@@ -91,12 +91,30 @@ class FundTransfer {
         }
 
         $response = $this->_curlPost($url, $fields);
+        Log::info($response);
 
-        if (isset($response['errors'])) {
-            return false;
+        if ($this->account_type == 'COINS') {
+            if (isset($response['errors'])) {
+                return [
+                    'success' => false,
+                    'error' => $response['errors']
+                ];
+            }
         }
 
-        return $response;
+        if ($this->account_type == 'UBANK') {
+            if ($response['status'] == 'F') {
+                return [
+                    'success' => false,
+                    'error' => $response['error_message']
+                ];
+            }
+        }
+
+        return [
+            'success' => true,
+            'reference_no' => isset($response['confirmation_no']) ? $response['confirmation_no'] : ''
+        ];
     }
 
     /**

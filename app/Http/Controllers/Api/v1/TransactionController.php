@@ -124,7 +124,7 @@ class TransactionController extends BaseController
                 'status' => $this->type['pending']
             ];
 
-            if (! $this->transaction->store($data)) {
+            if (! $transaction = $this->transaction->store($data)) {
                 throw new Exception("Error Processing Request: Cannot Add Transaction");
             }
 
@@ -137,7 +137,32 @@ class TransactionController extends BaseController
                 'account_no' => $userAccount->account_no, // UBANK
                 'transaction_id' => $invoice_id // UBANK
             ]);
-            $transaction = $fundTransfer->fundTransfer($action_type, $amount);
+            $response = $fundTransfer->fundTransfer($action_type, $amount);
+
+            // Update transaction
+            if ($response['success'] == false) {
+                Log::info('Fund Transfer: '. json_to_string($response['error']));
+
+                $data = [
+                    'status' => $this->type['failed']
+                ];
+
+                if (! $this->transaction->update($transaction->id, $data)) {
+                    Log::info('Fund Transfer: cannot update transaction status');
+                    throw new Exception("Error Processing Request: Cannot Fund Goal");
+                }
+
+                throw new Exception("Error Processing Request: Cannot Fund Goal");
+            }
+
+            $data = [
+                'status' => $this->type['success'],
+                'reference_no' => $response['reference_no']
+            ];
+            if (! $this->transaction->update($transaction->id, $data)) {
+                Log::info('Fund Transfer: cannot update transaction status');
+                throw new Exception("Error Processing Request: Cannot Fund Goal");
+            }
 
             // Update the Goal for the Accumulated Amount
             $goal = $this->goal->get($goal_id);
