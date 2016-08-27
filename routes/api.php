@@ -20,7 +20,11 @@ Route::get('/user', function (Request $request) {
 Route::group(['prefix' => 'v1', 'namespace' => 'Api\v1'], function(){
 
     Route::resource('users', 'UserController');
+
     Route::post('accounts', 'UserAccountController@getAccounts');
     Route::get('portfolio/{user_id?}', 'UserAccountController@getPortfolio');
+
     Route::resource('goals', 'GoalController');
+
+    Route::resource('contributors', 'ContributorController');
 });
