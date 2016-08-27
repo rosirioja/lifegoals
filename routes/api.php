@@ -27,4 +27,6 @@ Route::group(['prefix' => 'v1', 'namespace' => 'Api\v1'], function(){
     Route::resource('goals', 'GoalController');
 
     Route::resource('contributors', 'ContributorController');
+
+    Route::resource('transactions', 'TransactionController');
 });
