@@ -216,6 +216,78 @@ class BaseRepository
 
         return $instance->get();
     }
+
+    /**
+     * Get total number of records.
+     *
+     * @param  array|string $where Where clause
+     * @param  array $join Tables and conditions for joining
+     * @param  string $field Field to count
+     * @return integer Total number of records
+     */
+    public function getTotalBy($where = array(), $join = [])
+    {
+        $instance = $this->getNewInstance();
+        $instance = $instance->select('COUNT(id) total');
+
+        if (! empty($where)) {
+            foreach ($where as $i => $row) {
+                switch ($i) {
+                    case 'or':
+                        foreach ($row as $key) {
+                            if (! isset($key['operator'])) $key['operator'] = '=';
+                            $instance = $instance->orWhere($key['field'], $key['operator'], $key['value']);
+                        }
+                        break;
+
+                    case 'between':
+                        foreach ($row as $field => $values) {
+                            $instance = $instance->whereBetween($field, $values);
+                        }
+                        break;
+
+                    case 'and':
+                        $instance = $instance->where(function ($query) use ($row){
+                            foreach ($row as $key) {
+
+                                if (isset($key['raw']))
+                                {
+                                    $query->whereRaw($key['raw']);
+                                    continue;
+                                }
+
+                                if (! isset($key['operator'])) $key['operator'] = '=';
+                                $query->where($key['field'], $key['operator'], $key['value']);
+                            }
+                        });
+
+                        break;
+                    default:
+                        $instance = $instance->where($row);
+                        break;
+                }
+            }
+        }
+
+        if ( ! empty($join))
+        {
+            foreach ($join as $row)
+            {
+                if (empty($row['operator'])) $row['operator'] = '=';
+                switch ($row['join']) {
+                    case 'left':
+                        $instance = $instance->leftJoin($row['table'], $row['one'], $row['operator'], $row['two']);
+                        break;
+
+                    default:
+                        $instance = $instance->join($row['table'], $row['one'], $row['operator'], $row['two']);
+                        break;
+                }
+            }
+        }
+
+        return $instance->count();
+    }
     
     /**
     * Insert data in the database

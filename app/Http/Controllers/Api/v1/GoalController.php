@@ -30,6 +30,11 @@ class GoalController extends BaseController
             'group' => 'GROUP'
         ];
 
+        $this->goal_status = [
+            'ongoing' => 'ONGOING',
+            'achieved' => 'ACHIEVED'
+        ];
+
         DB::enableQueryLog();
     }
 
@@ -42,11 +47,12 @@ class GoalController extends BaseController
     {
         try {
             $params = [];
+            $user_id = $request->input('user_id');
 
             if ($request->input('user_id')) {
                 $params['where']['and'][] = [
                     'field' => 'user_id',
-                    'value' => $request->input('user_id')
+                    'value' => $user_id
                 ];
             }
 
@@ -64,8 +70,44 @@ class GoalController extends BaseController
                 ];
             }
 
-            if (! $data = $this->goal->getList($params)) {
+            // Get the goals!
+            if (! $goals = $this->goal->getList($params)) {
                 throw new Exception("Error Processing Request: Cannot Retrieve Goals");
+            }
+
+            $data = [];
+            foreach ($goals as $row) {
+                $goal_id = $row->id;
+
+                // Get the number of contributors of there is specified user_id
+                $contributors = 0;
+                if ($user_id) {
+                    $param = [
+                        'and' => [
+                            ['field' => 'goal_id', 'value' => $goal_id]
+                        ]
+                    ];
+                    if (! $contributors = $this->contributor->getTotalBy($param)) {
+                        throw new Exception("Error Processing Request: Cannot Retrieve Contributors");
+                    }
+                }
+                $row->contributors = $contributors;
+
+                // Get how many days it took for the goal to achieved
+                $days_achieved = 0;
+                if ($row->status == $this->goal_status['achieved']) {
+                    $achieved_date = strtotime($row->achieved_date);
+                    $created_at = strtotime($row->created_at);
+
+                    $diff = $achieved_date - $created_at;
+                    $days_achieved = ceil($diff / (60*60*24));
+                }
+
+                // Get what percent is the accumulated amount
+                $row->accumulated_amount_percentage = ($row->accumulated_amount / $row->target_amount) * 100;;
+
+                $row->days_achieved = $days_achieved;
+                $data[] = $row;
             }
 
         } catch (Exception $e) {
