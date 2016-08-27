@@ -150,7 +150,9 @@ class TransactionController extends BaseController
             if ($goal->status != $this->goal_status['achieved']) {
                 $is_achieved = $this->checkGoalStatus($goal, $new_amount);
                 if ($is_achieved) {
-                    $data['status'] = $this->goal_status['achieved'];
+                    if (! $this->updateGoalAchievedStatus($goal_id)) {
+                        throw new Exception("Error Processing Request: Cannot Update Goal Status");
+                    }
                 }
             }
 
