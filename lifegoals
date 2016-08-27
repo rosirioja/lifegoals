@@ -1,0 +1,28 @@
+#!/bin/bash
+
+build() {
+    docker build -t codeawesome/lifegoals .
+}
+
+deploy() {
+    docker run -p 0.0.0.0:80:80 --name lifegoals --link lifegoalsdb:lifegoalsdb --link integration:integration -d codeawesome/lifegoals
+}
+
+undeploy() {
+    docker stop lifegoals
+    docker rm lifegoals
+}
+
+case "$1" in
+    build)
+        build $2
+        ;;
+    deploy)
+        deploy $2
+        ;;
+    undeploy)
+        undeploy $2
+        ;;
+    *)
+        echo "lifegoals build|deploy|undeploy"
+esac
