@@ -42,7 +42,7 @@ class UserAccountController extends BaseController
             $isBadRequest = false; // switching of http response code
 
             $validator = Validator::make($request->all(), [
-                'user_id' => 'required|int',
+                'user_id' => 'required|numeric',
                 'type' => 'required',
                 'access_token' => 'required'
             ]);
