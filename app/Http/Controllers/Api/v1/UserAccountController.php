@@ -31,12 +31,58 @@ class UserAccountController extends BaseController
     }
 
     /**
-     * Add new account per user
+     * Get All User Accounts
+     * get user accounts per user
      *
      * @param Request $request
      * @return json
      */
     public function getAccounts(Request $request)
+    {
+        try {
+            $isBadRequest = false; // switching of http response code
+
+            $user_id = $request->input('user_id');
+
+            if (empty($user_id)) {
+                $isBadRequest = true;
+                throw new Exception("Error Processing Request: No parameter specified.");
+            }
+
+            $params = [
+                'where' => [
+                    'and' => [
+                        ['field' => 'user_id', 'value' => $user_id]
+                    ]
+                ]
+            ];
+
+            if (! $data = $this->userAccount->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve User Account");
+            }
+
+        } catch (Exception $e) {
+            $code = $isBadRequest ? 400 : 500;
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $code);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ], 200);
+
+    }
+
+    /**
+     * Add new account per user
+     *
+     * @param Request $request
+     * @return json
+     */
+    public function postAccounts(Request $request)
     {
         try {
             $isBadRequest = false; // switching of http response code
@@ -158,6 +204,5 @@ class UserAccountController extends BaseController
             'success' => true,
             'data' => $data
         ], 200);
-
     }
 }
