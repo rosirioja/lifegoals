@@ -24,6 +24,43 @@ class UserController extends BaseController
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        try {
+            $params = [];
+
+            if ($request->input('user_id')) {
+                $params = [
+                    'where' => [
+                        'and' => [
+                            ['field' => 'user_id', 'value' => $request->input('user_id')]
+                        ]
+                    ]
+                ];
+            }
+
+            if (! $data = $this->user->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Users");
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ], 200);
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -66,7 +103,7 @@ class UserController extends BaseController
             if ($this->user->exists(['facebook_id' => $facebook_id, 'active' => 1]) == 1) {
 
                 $user = $this->user->getBy(['facebook_id' => $facebook_id, 'active' => 1]);
-                
+
                 if (! $this->user->update($user->id, $data)) {
                     throw new Exception("Error Processing Request: Cannot Update User");
                 }
