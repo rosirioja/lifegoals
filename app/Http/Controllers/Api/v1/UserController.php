@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Http\Controllers\Api\v1;
+
+use Illuminate\Http\Request;
+
+use App\Http\Requests;
+
+use App\Http\Controllers\BaseController;
+
+use App\Contracts\UserInterface;
+
+use DB, Log, Exception, Validator;
+
+class UserController extends BaseController
+{
+
+    public function __construct(
+        UserInterface $userInterface)
+    {
+        $this->user = $userInterface;
+
+        DB::enableQueryLog();
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        try {
+            $bad_request = false; // switching of http response code
+
+            // Validate the request
+            $validator = Validator::make($request->all(), [
+                'facebook_id' => 'required',
+                'name' => 'required',
+                'firstname' => 'required',
+                'lastname' => 'required',
+                'email' => 'required|email',
+                'link' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                $bad_request = true;
+                throw new Exception(json_to_string($validator->messages()->toArray()));
+            }
+
+            /* 
+             * if facebook id exists, just update the user info
+             * else insert user info
+             */
+            $facebook_id = $request->input('facebook_id');
+
+            $data = [
+                'username' => $request->input('link'), // substr($request->input('link'), $start)
+                'name' => $request->input('name'),
+                'firstname' => $request->input('firstname'),
+                'lastname' => $request->input('lastname'),
+                'email' => $request->input('email')
+            ];
+
+            if ($this->user->exists(['facebook_id' => $facebook_id, 'active' => 1]) == 1) {
+
+                $user = $this->user->getBy(['facebook_id' => $facebook_id, 'active' => 1]);
+                Log::info($user);
+                if (! $this->user->update($user->id, $data)) {
+                    throw new Exception("Error Processing Request: Cannot Update User");
+                }
+
+            } else {
+
+                $data['facebook_id'] =  $facebook_id;
+
+                if (! $user = $this->user->store($data)) {
+                    throw new Exception("Error Processing Request: Cannot Add User");
+                }
+            }
+
+        } catch (Exception $e) {
+            $code = $bad_request ? 400 : 500;
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $code);
+        }
+
+        return response()->json([
+            'success' => true,
+            'user_id' => $user->id
+        ], 200);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        //
+    }
+}
