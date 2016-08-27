@@ -38,9 +38,47 @@ class GoalController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        try {
+            $params = [];
+
+            if ($request->input('user_id')) {
+                $params['where']['and'][] = [
+                    'field' => 'user_id',
+                    'value' => $request->input('user_id')
+                ];
+            }
+
+            if ($request->input('status')) {
+                $params['where']['and'][] = [
+                    'field' => 'status',
+                    'value' => $request->input('status')
+                ];
+            }
+
+            if ($request->input('visibility')) {
+                $params['where']['and'][] = [
+                    'field' => 'visibility',
+                    'value' => $request->input('visibility')
+                ];
+            }
+
+            if (! $data = $this->goal->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Goals");
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ], 200);
     }
 
     /**
@@ -117,6 +155,7 @@ class GoalController extends BaseController
                 $data['image_path'] = $path.$newFilename;
             }
 
+            // Insert in DB!
             if (! $goal = $this->goal->store($data)) {
                 throw new Exception("Error Processing Request: Cannot Add Goal");
             }
