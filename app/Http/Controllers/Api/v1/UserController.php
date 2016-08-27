@@ -37,7 +37,7 @@ class UserController extends BaseController
                 $params = [
                     'where' => [
                         'and' => [
-                            ['field' => 'user_id', 'value' => $request->input('user_id')]
+                            ['field' => 'id', 'operator' => '!=', 'value' => $request->input('user_id')]
                         ]
                     ]
                 ];
