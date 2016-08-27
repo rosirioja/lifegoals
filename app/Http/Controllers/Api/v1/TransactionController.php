@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api1\v1;
+namespace App\Http\Controllers\Api\v1;
 
 use Illuminate\Http\Request;
 
@@ -36,6 +36,11 @@ class TransactionController extends BaseController
             'success' => 'SUCCESS',
             'failed' => 'FAILED',
             'cancelled' => 'CANCELLED'
+        ];
+
+        $this->action_type = [
+            'cashin' => 'CASHIN',
+            'cashout' => 'CASHOUT'
         ];
 
         DB::enableQueryLog();
@@ -79,6 +84,7 @@ class TransactionController extends BaseController
             $user_id = $request->input('user_id');
             $user_account_id = $request->input('user_account_id');
             $amount = $request->input('amount');
+            $action_type = $request->input('type');
 
             // VALIDATION - STARTS
             if (! $this->goal->exists(['id' => $goal_id])) {
@@ -123,6 +129,34 @@ class TransactionController extends BaseController
             // Call Transaction Service
             // $response = new TransactionService($userAccount->access_token, $amount);
             // $transaction = $response->fundTransfer($recipient);
+
+            // Update the Goal for the Accumulated Amount
+            $goal = $this->goal->get($goal_id);
+
+            $new_amount = $goal->accumulated_amount;
+            if ($action_type == $this->action_type['cashin']) {
+                $new_amount = $goal->accumulated_amount + $amount;
+            }
+
+            if ($action_type == $this->action_type['cashout']) {
+                $new_amount = $goal->accumulated_amount - $amount;
+            }
+
+            $data = [
+                'accumulated_amount' => $new_amount
+            ];
+
+            // Check if the goal is already achieved
+            if ($goal->status != $this->goal_status['achieved']) {
+                $is_achieved = $this->checkGoalStatus($goal, $new_amount);
+                if ($is_achieved) {
+                    $data['status'] = $this->goal_status['achieved'];
+                }
+            }
+
+            if (! $this->goal->update($goal_id, $data)) {
+                throw new Exception("Error Processing Request: Cannot Update Amount");
+            }
 
         } catch (Exception $e) {
             $code = $isBadRequest ? 400 : 500;
