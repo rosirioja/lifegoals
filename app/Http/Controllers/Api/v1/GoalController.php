@@ -303,7 +303,7 @@ class GoalController extends BaseController
             $data = [
                 'goal' => $goal,
                 'contributors' => $contributors,
-                'total_amount' => number_format($goal->accumulated_amount, 2, '.', ',')
+                'total_amount' => $goal->accumulated_amount
             ];
         } catch (Exception $e) {
             $code = $isBadRequest ? 400 : 500;
