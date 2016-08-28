@@ -59,8 +59,28 @@ class UserAccountController extends BaseController
                 ]
             ];
 
-            if (! $data = $this->userAccount->getList($params)) {
+            if (! $accounts = $this->userAccount->getList($params)) {
                 throw new Exception("Error Processing Request: Cannot Retrieve User Account");
+            }
+
+            $data = [];
+            foreach ($accounts as $row) {
+                $response = $this->connectAccountService([
+                    'type' => $row->type,
+                    'access_token' => $row->access_token,
+                    'account_no' => $row->account_no
+                ]);
+
+                if ($response == false) {
+                    Log::info('/index/user_id: Cannot Retrieve Account Information');
+                    Log::info($row);
+                    continue;
+                }
+
+                $current_balance = ($row->type == 'UBANK') ? $response['avaiable_balance'] : $response['balance'];
+                $row->current_balance = number_format($current_balance, 2, '.', ',');
+
+                $data[] = $row;
             }
 
         } catch (Exception $e) {
