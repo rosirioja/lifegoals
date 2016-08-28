@@ -145,7 +145,7 @@ class GoalController extends BaseController
     {
         Log::info('Goal Store');
         Log::info($request->all());
-        
+
         try {
             $isBadRequest = false; // switching of http response code
 
@@ -186,12 +186,12 @@ class GoalController extends BaseController
             ];
 
             // Upload Image!
-            if ($request->hasFile('image')) {
+            if ($request->hasFile('file')) {
                 $path = 'uploads/images/'. $user_id .'/';
                 $destinationPath = public_path($path);
 
                 // Check if the file is valid
-                if (! $request->file('image')->isValid()) {
+                if (! $request->file('file')->isValid()) {
                     throw new Exception("Error Processing Request: Cannot Upload Image");
                 }
 
@@ -200,12 +200,12 @@ class GoalController extends BaseController
                     File::makeDirectory($destinationPath, 0775, true);
                 }
 
-                $filename = $request->file('image')->getClientOriginalName();
-                $extension = $request->file('image')->getClientOriginalExtension();
-                $newFilename = $request->file('image')->getFilename() .'.'. $extension;
+                $filename = $request->file('file')->getClientOriginalName();
+                $extension = $request->file('file')->getClientOriginalExtension();
+                $newFilename = $request->file('file')->getFilename() .'.'. $extension;
 
                 // uploading file to given path
-                if(! $request->file('image')->move($destinationPath, $newFilename)) {
+                if(! $request->file('file')->move($destinationPath, $newFilename)) {
                     throw new Exception("Error Processing Request: Cannot Upload Image");
                 }
 
