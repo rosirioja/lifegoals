@@ -45,7 +45,7 @@ class GoalController extends BaseController
     {
         Log::info('Goal Index');
         Log::info($request->all());
-        
+
         try {
             $params = [];
             $user_id = $request->input('user_id');
@@ -122,7 +122,7 @@ class GoalController extends BaseController
 
                 // Get what percent is the accumulated amount
                 $percentage = ($row->accumulated_amount / $row->target_amount) * 100;
-                $row->accumulated_amount_percentage = number_format($percentage, 2, '.', ',');
+                $row->accumulated_amount_percentage = number_format($percentage, 0, '.', ',');
 
                 $row->days_achieved = $days_achieved;
 
