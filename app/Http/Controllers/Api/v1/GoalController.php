@@ -80,6 +80,7 @@ class GoalController extends BaseController
             foreach ($goals as $row) {
                 $goal_id = $row->id;
 
+                $row->image_path = 'http://lifegoals.cloudapp.net/'. $row->image_path;
                 $row->accumulated_amount = number_format($row->accumulated_amount, 2, '.', ',');
                 $row->target_amount = number_format($row->target_amount, 2, '.', ',');
 
@@ -267,6 +268,7 @@ class GoalController extends BaseController
             $goal = $this->goal->get($id);
             $goal_id = $goal->id;
             $goal->target_amount = number_format($goal->target_amount, 2, '.', ',');
+            $goal->image_path = 'http://lifegoals.cloudapp.net/'. $goal->image_path;
 
             // get the contributors and its total amount per contributors
             $params = [
