@@ -266,6 +266,7 @@ class GoalController extends BaseController
             // get the goal info
             $goal = $this->goal->get($id);
             $goal_id = $goal->id;
+            $goal->target_amount = number_format($goal->target_amount, 2, '.', ',');
 
             // get the contributors and its total amount per contributors
             $params = [
@@ -286,10 +287,14 @@ class GoalController extends BaseController
             ];
             if (! $contributors = $this->transaction->getList($params));
 
+            foreach ($contributors as $row) {
+                $row->total = number_format($row->total, 2, '.', ',');
+            }
+
             $data = [
                 'goal' => $goal,
                 'contributors' => $contributors,
-                'total_amount' => $goal->accumulated_amount
+                'total_amount' => number_format($goal->accumulated_amount, 2, '.', ',')
             ];
         } catch (Exception $e) {
             $code = $isBadRequest ? 400 : 500;
