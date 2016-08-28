@@ -156,6 +156,8 @@ class UserAccountController extends BaseController
                 throw new Exception("Error Processing Request: Cannot Add Account");
             }
 
+            $data->current_balance = number_format($data->current_balance, 2, '.', ',');
+
         } catch (Exception $e) {
             $code = $isBadRequest ? 400 : 500;
             return response()->json([
@@ -226,15 +228,20 @@ class UserAccountController extends BaseController
                     continue;
                 }
 
-                $row->current_balance = ($row->type == 'UBANK') ? $response['avaiable_balance'] : $response['balance'];
-                $total += $row->current_balance;
+                $current_balance = ($row->type == 'UBANK') ? $response['avaiable_balance'] : $response['balance'];
+                $row->current_balance = number_format($current_balance, 2, '.', ',');
+                $total += $current_balance;
 
                 $updated_accounts[] = $row;
             }
 
+            foreach ($transactions as $row) {
+                $row->amount = number_format($row->amount, 2, '.', ',');
+            }
+
             $data = [
-                'total' => $total,
-                'accounts' => $accounts,
+                'total' => number_format($total, 2, '.', ','),
+                'accounts' => $updated_accounts,
                 'transactions' => $transactions
             ];
 
