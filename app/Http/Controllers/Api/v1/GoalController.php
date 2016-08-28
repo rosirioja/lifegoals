@@ -270,7 +270,8 @@ class GoalController extends BaseController
             $goal = $this->goal->get($id);
             $goal_id = $goal->id;
             $goal->creator = $goal->user->name;
-            $goal->target_amount = number_format($goal->target_amount, 2, '.', ',');
+            $goal->target_date = date('Y-m-d', strtotime($goal->target_date));
+            $goal->target_amount = ($goal->target_date == null) ? '' : number_format($goal->target_amount, 2, '.', ',');
             $goal->accumulated_amount = number_format($goal->accumulated_amount, 2, '.', ',');
             $goal->image_path = 'http://lifegoals.cloudapp.net/'. $goal->image_path;
 
@@ -279,25 +280,38 @@ class GoalController extends BaseController
 
             // get the contributors and its total amount per contributors
             $params = [
-                'selectRaw' => 'users.name, users.facebook_id, sum(amount) total',
+                'select' => ['user_id'],
                 'where' => [
                     'and' => [
                         ['field' => 'goal_id', 'value' => $id]
                     ]
                 ],
-                'join' => [
-                    [
-                        'table' => 'users',
-                        'one' => 'users.id',
-                        'two' => 'transactions.user_id'
-                    ]
-                ],
-                'groupby_raw' => 'user_id, users.name, users.facebook_id'
+                'group_by' => ['user_id']
             ];
-            if (! $contributors = $this->transaction->getList($params));
+            if (! $contributors = $this->contributor->getList($params)) {
+                throw new Exception("Error Processing Request: Cannot Retrieve Contributors");
+            }
 
             foreach ($contributors as $row) {
-                $row->total = number_format($row->total, 2, '.', ',');
+                $row->name = $row->user->name;
+                $row->facebook_id = $row->user->facebook_id;
+
+                $result = $this->transaction->getList([
+                    'selectRaw' => 'sum(amount) as total',
+                    'where' => [
+                        'and' => [
+                            ['field' => 'goal_id', 'value' => $id],
+                            ['field' => 'user_id', 'value' => $row->user_id]
+                        ]
+                    ]
+                ]);
+
+                $total = 0;
+                foreach ($result as $key) {
+                    $total = number_format($key->total, 2, '.', ',');
+                }
+
+                $row->total = $total;
             }
 
             $data = [
