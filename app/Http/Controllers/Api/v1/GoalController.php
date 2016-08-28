@@ -269,8 +269,13 @@ class GoalController extends BaseController
             // get the goal info
             $goal = $this->goal->get($id);
             $goal_id = $goal->id;
+            $goal->creator = $goal->user->name;
             $goal->target_amount = number_format($goal->target_amount, 2, '.', ',');
+            $goal->accumulated_amount = number_format($goal->accumulated_amount, 2, '.', ',');
             $goal->image_path = 'http://lifegoals.cloudapp.net/'. $goal->image_path;
+
+            $percentage = ($goal->accumulated_amount / $goal->target_amount) * 100;
+            $goal->accumulated_amount_percentage = number_format($percentage, 0, '.', ',');
 
             // get the contributors and its total amount per contributors
             $params = [
