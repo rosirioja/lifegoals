@@ -43,6 +43,9 @@ class GoalController extends BaseController
      */
     public function index(Request $request)
     {
+        Log::info('Goal Index');
+        Log::info($request->all());
+        
         try {
             $params = [];
             $user_id = $request->input('user_id');
@@ -76,6 +79,9 @@ class GoalController extends BaseController
             $data = [];
             foreach ($goals as $row) {
                 $goal_id = $row->id;
+
+                $row->accumulated_amount = number_format($row->accumulated_amount, 2, '.', ',');
+                $row->target_amount = number_format($row->target_amount, 2, '.', ',');
 
                 // Get the number of contributors of there is specified user_id
                 $contributors = 0;
@@ -115,7 +121,8 @@ class GoalController extends BaseController
                 }
 
                 // Get what percent is the accumulated amount
-                $row->accumulated_amount_percentage = ($row->accumulated_amount / $row->target_amount) * 100;;
+                $percentage = ($row->accumulated_amount / $row->target_amount) * 100;
+                $row->accumulated_amount_percentage = number_format($percentage, 2, '.', ',');
 
                 $row->days_achieved = $days_achieved;
 
