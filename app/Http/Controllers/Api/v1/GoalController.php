@@ -143,6 +143,9 @@ class GoalController extends BaseController
      */
     public function store(Request $request)
     {
+        Log::info('Goal Store');
+        Log::info($request->all());
+        
         try {
             $isBadRequest = false; // switching of http response code
 
