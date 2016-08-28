@@ -47,7 +47,9 @@ class GoalController extends BaseController
         Log::info($request->all());
 
         try {
-            $params = [];
+            $params = [
+                'order_by' => ['id' => 'desc']
+            ];
             $user_id = $request->input('user_id');
 
             if ($request->input('user_id')) {
